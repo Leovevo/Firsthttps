@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Leo's 챗봇</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* 1. 배경 화면 설정 (눈 내리는 벽난로 GIF) */
+    body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            /* 1. 이미지 로딩 실패 시 눈부심을 막아줄 기본 어두운 배경색 추가 */
+            background-color: #1a1a1a; 
+            /* 2. 접근이 차단되지 않는 안정적인 눈 내리는 산장/벽난로 GIF로 주소 변경 */
+            background: url('/static/bg.gif') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        /* 2. 글래스모피즘 (반투명 유리 질감) 채팅창 배경 */
+        .chat-container {
+            width: 100%;
+            max-width: 650px;
+            height: 85vh;
+            background: rgba(20, 15, 10, 0.45); /* 어두운 나무톤 반투명 */
+            backdrop-filter: blur(8px); /* 배경 블러 처리 */
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            text-align: center;
+            color: #ffebd6;
+            margin-top: 0;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        #chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 3. 말풍선 정렬 및 디자인 */
+        .msg-wrapper { display: flex; width: 100%; }
+        .msg-wrapper.user { justify-content: flex-end; }
+        .msg-wrapper.ai { justify-content: flex-start; }
+
+        .msg {
+            max-width: 75%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            line-height: 1.6;
+            font-size: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .user-msg {
+            background: linear-gradient(135deg, #d35400 0%, #e67e22 100%); /* 벽난로 불꽃 색상 */
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-msg {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* 4. 입력창 및 전송 버튼 */
+        .input-group { display: flex; gap: 12px; }
+        
+        input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        input::placeholder { color: #aaa; }
+        input:focus { background: rgba(0, 0, 0, 0.6); border-color: #e67e22; }
+
+        button {
+            padding: 0 25px;
+            border: none;
+            border-radius: 30px;
+            background: #e67e22;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        button:hover { transform: scale(1.05); background: #d35400; }
+
+        /* 스크롤바 디자인 */
+        #chat-box::-webkit-scrollbar { width: 8px; }
+        #chat-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h2>🔥 AI 챗봇 🔥</h2>
+        <div id="chat-box"></div>
+        
+        <div class="input-group">
+            <input type="text" id="userInput" placeholder="따뜻한 불을 쬐며 질문을 남겨보세요..." onkeypress="if(event.keyCode==13) sendMessage()">
+            <button onclick="sendMessage()">전송</button>
+        </div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const inputField = document.getElementById('userInput');
+            const chatBox = document.getElementById('chat-box');
+            const userText = inputField.value.trim();
+
+            if (!userText) return;
+
+            // 말풍선을 감싸는 구조(msg-wrapper)를 추가하여 좌우 정렬을 완벽하게 맞춥니다.
+            chatBox.innerHTML += `
+                <div class="msg-wrapper user">
+                    <div class="msg user-msg"><b>나:</b> ${userText}</div>
+                </div>`;
+            inputField.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/sendMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: userText })
+                });
+                
+                const data = await response.json();
+                const formattedReply = marked.parse(data.reply);
+                
+                chatBox.innerHTML += `
+                    <div class="msg-wrapper ai">
+                        <div class="msg ai-msg"><b>AI:</b> ${formattedReply}</div>
+                    </div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (error) {
+                chatBox.innerHTML += `<div class="msg-wrapper ai"><div class="msg ai-msg" style="color:red;"><b>에러:</b> 서버 통신 실패</div></div>`;
+            }
+        }
+    </script>
+</body>
+</html>
