@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # <-- 이 줄을 새로 입력하세요
 import google.generativeai as genai
 
 app = Flask(__name__)
+CORS(app)  # <-- 이 줄도 새로 입력하세요
 
 # ⭐️ 1. 여기에 발급받은 API 키를 붙여넣으세요! (따옴표는 유지해야 합니다)
 GEMINI_API_KEY = "여기는비밀번호"
